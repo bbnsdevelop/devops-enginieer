@@ -332,3 +332,28 @@ but when finish process to creater still execute manually
 in the end update admin.conf
 export KUBECONFIG=/etc/kubernetes/admin.conf
 only on master-1
+
+
+
+#cluster high availability on-premise
+High-availability (HA) on-premise servers ensure continuous service, often targeting 99.99% or higher uptime, 
+by eliminating single points of failure through redundancy. Key strategies include clustering, active-passive failover, 
+load balancing, and data replication across multiple hosts to handle hardware or software failures seamlessly. 
+
+Key Components and Strategies
+Clustering & Failover: A primary server handles operations, with a standby server automatically taking over during downtime.
+Redundancy: Duplicate hardware, networking, and power sources are critical to prevent localized failures from causing outages.
+Data Replication: Periodic or real-time replication ensures data consistency between primary and standby servers.
+Load Balancing: Distributes traffic across multiple servers, common in Remote Desktop Services (RDS).
+Virtualization: Using virtual machines (VMs) facilitates faster recovery and resource reallocation. 
+
+Implementation Best Practices
+Planning: Define required uptime (SLAs), Recovery Time Objectives (RTO), and Recovery Point Objectives (RPO).
+Architecture: Implement multiple nodes/servers to ensure that if one fails, others in the cluster continue to function.
+Monitoring: Use tools to detect failures immediately and trigger automated failover processes.
+Scope: Ensure redundancy covers not just servers, but networking, storage, and application layers
+
+look images on static/img
+
+
+#Terraform create cluster
