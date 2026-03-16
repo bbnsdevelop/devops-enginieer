@@ -418,3 +418,49 @@ Enable CLI autocomplete:
 terraform -install-autocomplete
 
 Restart the shell afterward.
+
+
+# config kubectl to access our master-1
+root@master-1:/home/vagrant# cd /etc/kubernetes/
+root@master-1:/etc/kubernetes# 
+
+root@master-1:/etc/kubernetes# cat admin.conf
+copy this content and generate new file on ~/.kube 
+
+need to call config the name of file, because kubctl will watch it
+
+
+b2@b2-Nitro-AN515-51:~/.kube$ sudo vim config 
+[sudo: authenticate] Password: 
+b2@b2-Nitro-AN515-51:~/.kube$ ls
+cache  config
+b2@b2-Nitro-AN515-51:~/.kube$ cat config 
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data
+
+
+another way is configure variable to point at where is file
+export KUBECONFIG=$HOME/.kube/(name_file)
+
+
+kubctl get po -A --kubeconfig (where is file) ---> this allow create linux alias to access differents masters 
+
+alias kubectl-vagrant-master='kubectl get pod -A --kubeconfig ~/.kube/master-vagrant/config'
+source ~/.bashrc 
+
+b2@b2-Nitro-AN515-51:~/.kube$ kubectl-vagrant-master 
+NAMESPACE      NAME                               READY   STATUS    RESTARTS      AGE
+kube-flannel   kube-flannel-ds-9kszl              1/1     Running   2 (24h ago)   4d19h
+kube-flannel   kube-flannel-ds-h92jj              1/1     Running   2 (24h ago)   4d19h
+kube-flannel   kube-flannel-ds-zvrkj              1/1     Running   2 (24h ago)   4d20h
+kube-system    coredns-7d764666f9-hx2b4           1/1     Running   2 (24h ago)   5d19h
+kube-system    coredns-7d764666f9-qd8l9           1/1     Running   2 (24h ago)   5d19h
+kube-system    etcd-master-1                      1/1     Running   4 (24h ago)   5d19h
+kube-system    kube-apiserver-master-1            1/1     Running   4 (24h ago)   5d19h
+kube-system    kube-controller-manager-master-1   1/1     Running   4 (24h ago)   5d19h
+kube-system    kube-proxy-d47s6                   1/1     Running   3 (24h ago)   5d19h
+kube-system    kube-proxy-kbtzl                   1/1     Running   2 (24h ago)   4d19h
+kube-system    kube-proxy-x9rv8                   1/1     Running   2 (24h ago)   4d19h
+kube-system    kube-scheduler-master-1            1/1     Running   4 (24h ago)   5d19h
