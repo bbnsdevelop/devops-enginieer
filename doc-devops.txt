@@ -644,3 +644,90 @@ etcdctl member list -w table
 
 
 but each session need to load this env available source etcdctl.env
+
+## now it's time to create our backup
+
+root@master-1:/var/lib/etcd# etcdctl snapshot save --help
+NAME:
+	snapshot save - Stores an etcd node backend snapshot to a given file
+
+USAGE:
+	etcdctl snapshot save <filename> [flags]
+
+OPTIONS:
+  -h, --help[=false]	help for save
+
+GLOBAL OPTIONS:
+      --cacert=""				verify certificates of TLS-enabled secure servers using this CA bundle
+      --cert=""					identify secure client using this TLS certificate file
+      --command-timeout=5s			timeout for short running command (excluding dial timeout)
+      --debug[=false]				enable client-side debug logging
+      --dial-timeout=2s				dial timeout for client connections
+  -d, --discovery-srv=""			domain name to query for SRV records describing cluster endpoints
+      --endpoints=[127.0.0.1:2379]		gRPC endpoints
+      --hex[=false]				print byte strings as hex encoded strings
+      --insecure-discovery[=true]		accept insecure SRV records describing cluster endpoints
+      --insecure-skip-tls-verify[=false]	skip server certificate verification (CAUTION: this option should be enabled only for testing purposes)
+      --insecure-transport[=true]		disable transport security for client connections
+      --keepalive-time=2s			keepalive time for client connections
+      --keepalive-timeout=6s			keepalive timeout for client connections
+      --key=""					identify secure client using this TLS key file
+      --user=""					username[:password] for authentication (prompt if password is not supplied)
+  -w, --write-out="simple"			set the output format (fields, json, protobuf, simple, table)
+
+root@master-1:/var/lib/etcd# etcdctl snapshot save snapshot.db
+
+
+root@master-1:/var/lib/etcd# ls -lh
+total 3.0M
+drwx------ 4 root root 4.0K Mar 19 23:57 member
+-rw-r--r-- 1 root root 3.0M Mar 20 00:11 snapshot.db    <----------- the size here depends on how many object you have configure on your kubernetes
+
+
+# how to do our restore and when
+usually we do it when crash cluster etc
+root@master-1:/var/lib/etcd# etcdctl snapshot restore snapshot.db
+2026-03-20 00:14:57.742091 I | mvcc: restore compact to 90728
+2026-03-20 00:14:57.796030 I | etcdserver/membership: added member 8e9e05c52164694d [http://localhost:2380] to cluster cdf818194e3a8c32
+
+
+
+
+Summary
+kubespray: Creating VMs in Proxmox with Terraform
+
+To run it, basically:
+
+terraform init
+terraform plan
+terraform apply
+
+You only need to configure authentication as documented here.
+
+I chose to create a token, and I run Terraform using these environment variables:
+
+export PM_API_TOKEN_ID="xxxx"
+export PM_API_TOKEN_SECRET="yyyy"
+
+etcd: Configuring etcdctl
+cat <<EOF > etcdctl.env
+export ETCDCTL_CACERT=/etc/kubernetes/pki/etcd/ca.crt
+export ETCDCTL_CERT=/etc/kubernetes/pki/etcd/server.crt
+export ETCDCTL_KEY=/etc/kubernetes/pki/etcd/server.key
+export ETCDCTL_API=3
+EOF
+
+
+source etcdctl.env
+etcdctl member list
+
+-----------------------------------------
+
+### create a POD on cluster by yaml file 
+
+kubctl apply -f NAME_FILE.yaml
+
+this will sent to api server to create our pod
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl apply -f nginx-pod.yaml 
+pod/nginx created
+
