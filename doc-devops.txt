@@ -731,3 +731,217 @@ this will sent to api server to create our pod
 b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl apply -f nginx-pod.yaml 
 pod/nginx created
 
+
+get info on pod 
+
+kubectl get po nginx -o yaml 
+
+
+get info on pod with krew
+setup: https://krew.sigs.k8s.io/docs/user-guide/setup/install/
+
+kubectl krew install neat 
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer(main)$ kubectl get po nginx -o yaml | kubectl neat > nginx.yaml
+
+# Namespace
+
+
+What is a Namespace in Kubernetes
+
+A namespace is a logical partition inside a cluster.
+
+It lets you divide a single cluster into multiple virtual clusters.
+
+🎯 What namespaces actually do
+1. Resource isolation (soft isolation)
+
+Namespaces separate resources like:
+
+Pods
+
+Services
+
+ConfigMaps
+
+Secrets
+
+Deployments
+
+Example:
+
+kubectl get pods -n dev
+kubectl get pods -n prod
+
+Same cluster → different environments.
+
+2. Name scoping
+
+Inside a namespace, resource names must be unique.
+
+But across namespaces, they can repeat.
+
+Example:
+
+dev namespace → api-pod
+prod namespace → api-pod
+
+Both are valid.
+
+3. Access control (RBAC)
+
+You can control who can access what per namespace.
+
+Example:
+
+Dev team → only dev namespace
+
+Ops team → prod namespace
+
+Using:
+
+Roles
+
+RoleBindings
+
+4. Resource quotas & limits
+
+You can limit usage per namespace:
+
+CPU
+
+Memory
+
+Number of pods
+
+Example:
+
+resources:
+  limits.cpu: "4"
+  limits.memory: "8Gi"
+
+This prevents one team from consuming the whole cluster.
+
+5. Network policies (security)
+
+Namespaces help define network isolation.
+
+Example:
+
+Pods in dev cannot talk to prod
+
+(using NetworkPolicy)
+
+6. Multi-tenancy (very important)
+
+Namespaces allow multiple teams/projects to share one cluster safely.
+
+Think:
+
+Cluster
+ ├── dev team
+ ├── QA team
+ ├── production
+ └── monitoring
+🚫 What namespaces do NOT do
+
+Important limitations:
+
+❌ They do NOT isolate:
+
+Nodes
+
+Kernel
+
+Network interfaces (by default)
+
+👉 It’s logical isolation, not full isolation like VMs.
+
+📦 Default namespaces
+
+Kubernetes already has some:
+
+default → where resources go if not specified
+
+kube-system → system components (DNS, scheduler, etc.)
+
+kube-public → publicly readable
+
+kube-node-lease → node heartbeats
+
+🧩 Example workflow
+
+Create namespace:
+
+kubectl create namespace dev
+
+Run pod in it:
+
+kubectl run nginx --image=nginx -n dev
+🔥 Real-world DevOps usage
+
+Namespaces are used to separate:
+
+dev
+staging
+prod
+monitoring
+logging
+ci-cd
+⚖️ Namespace vs Cluster
+Feature	Namespace	Cluster
+Isolation	Logical	Physical/strong
+Cost	Low	High
+Setup	Fast	Complex
+Use case	Multi-team apps	Full isolation
+🧠 Mental model
+
+Think of namespaces like:
+
+👉 folders inside a cluster
+
+cluster/
+ ├── dev/
+ ├── prod/
+ └── monitoring/
+
+Same infrastructure, organized and controlled.
+
+🚀 Pro tip (very useful)
+
+Always set a default namespace in your context:
+
+kubectl config set-context --current --namespace=dev
+
+So you don’t need -n dev every time.
+
+✅ Summary
+
+Namespaces:
+
+Organize resources
+
+Provide soft isolation
+
+Enable RBAC
+
+Control resource usage
+
+Support multi-tenancy
+
+## creating namespaces
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl create ns dev
+namespace/dev created
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get namespaces 
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get po -n dev
+No resources found in dev namespace.
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ ls
+Vagrantfile  automation-vagrant-kubeadm  nginx-pod-dev.yaml  nginx-pod.yaml  stop-vms.sh
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl apply -f nginx-pod-dev.yaml 
+pod/nginx created
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get po -n dev
+NAME    READY   STATUS              RESTARTS   AGE
+nginx   0/1     ContainerCreating   0          5s
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get po -n dev
+NAME    READY   STATUS    RESTARTS   AGE
+nginx   1/1     Running   0          23s
