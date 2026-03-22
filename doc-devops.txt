@@ -1257,3 +1257,392 @@ For kubeadm clusters, always configure node IP via:
 or
 
 kubeadm config → nodeRegistration.kubeletExtraArgs (ideal for automation)
+
+
+
+# another problem using vagrant NAT when intereact 
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl run --image alpine --rm -it demo sh
+All commands and output from this session will be recorded in container logs, including credentials and sensitive information passed through the command prompt.
+If you don't see a command prompt, try pressing enter.
+/ # apk add curl
+WARNING: updating and opening https://dl-cdn.alpinelinux.org/alpine/v3.23/main/x86_64/APKINDEX.tar.gz: DNS: transient error (try again later)
+WARNING: updating and opening https://dl-cdn.alpinelinux.org/alpine/v3.23/community/x86_64/APKINDEX.tar.gz: DNS: transient error (try again later)
+ERROR: unable to select packages:
+  curl (no such package):
+    required by: world[curl]
+/ # apk add bind-tools
+WARNING: updating and opening https://dl-cdn.alpinelinux.org/alpine/v3.23/main/x86_64/APKINDEX.tar.gz: DNS: transient error (try again later)
+WARNING: updating and opening https://dl-cdn.alpinelinux.org/alpine/v3.23/community/x86_64/APKINDEX.tar.gz: DNS: transient error (try again later)
+ERROR: unable to select packages:
+  bind-tools (no such package):
+    required by: world[bind-tools]
+
+/ # ping google.com
+ping: bad address 'google.com'
+
+
+try make connection on internal 
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get svc
+NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   12d
+
+# nslookup kubernetes
+;; connection timed out; no servers could be reached
+
+also failed
+
+
+look our demo it's running o worker-2 
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl run --image alpine --rm -it demo sh
+If we ping on it we have connection
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get po -owide -n kube-system
+NAME                               READY   STATUS    RESTARTS      AGE   IP            NODE       NOMINATED NODE   READINESS GATES
+coredns-7d764666f9-hx2b4           1/1     Running   7 (94m ago)   12d   10.244.0.17   master-1   <none>           <none>
+coredns-7d764666f9-qd8l9           1/1     Running   7 (94m ago)   12d   10.244.0.16   master-1   <none>           <none>
+etcd-master-1                      1/1     Running   9 (94m ago)   12d   10.0.2.15     master-1   <none>           <none>
+kube-apiserver-master-1            1/1     Running   9 (94m ago)   12d   10.0.2.15     master-1   <none>           <none>
+kube-controller-manager-master-1   1/1     Running   9 (94m ago)   12d   10.0.2.15     master-1   <none>           <none>
+kube-proxy-d47s6                   1/1     Running   8 (94m ago)   12d   10.0.2.15     master-1   <none>           <none>
+kube-proxy-kbtzl                   1/1     Running   7 (92m ago)   11d   172.89.0.22   worker-2   <none>           <none>
+kube-proxy-x9rv8                   1/1     Running   7 (93m ago)   11d   172.89.0.21   worker-1   <none>           <none>
+kube-scheduler-master-1            1/1     Running   9 (94m ago)   12d   10.0.2.15     master-1   <none>           <none>
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get po -owide
+NAME    READY   STATUS    RESTARTS      AGE     IP           NODE       NOMINATED NODE   READINESS GATES
+demo    1/1     Running   0             11m     10.244.2.5   worker-2   <none>           <none>
+nginx   1/1     Running   3 (94m ago)   2d18h   10.244.1.7   worker-1   <none>           <none>
+
+
+ # ping 172.89.0.22
+PING 172.89.0.22 (172.89.0.22): 56 data bytes
+64 bytes from 172.89.0.22: seq=0 ttl=64 time=0.235 ms
+64 bytes from 172.89.0.22: seq=1 ttl=64 time=0.167 ms
+64 bytes from 172.89.0.22: seq=2 ttl=64 time=0.176 ms
+64 bytes from 172.89.0.22: seq=3 ttl=64 time=0.251 ms
+
+
+Just has connection on the same NODE
+
+
+
+The container can't make an stable connection
+
+
+How to solve this problem on kube flannel pod only reach pod same node?
+
+see https://github.com/flannel-io/flannel/issues/1098
+The sed command is adding --iface=enp0s8 to the flannel args
+
+using default cni0
+ cni0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UP group default qlen 1000
+    link/ether 46:c4:a4:bd:8e:0f brd ff:ff:ff:ff:ff:ff
+    inet 10.244.1.1/24 brd 10.244.1.255 scope global cni0
+
+instead of enp0s8
+: enp0s8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 08:00:27:7f:1a:af brd ff:ff:ff:ff:ff:ff
+
+
+identify and edit process on flannel:
+
+2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get ds -A
+NAMESPACE      NAME              DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE
+kube-flannel   kube-flannel-ds   3         3         3       3            3           <none>                   11d
+kube-system    kube-proxy        3         3         3       3            3           kubernetes.io/os=linux   12d
+
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl edit ds -n kube-flannel kube-flannel-ds
+
+containers:
+      - args:
+        - --ip-masq
+        - --kube-subnet-mgr
+        - --iface=enp0s8
+
+# will recicle flannel and constroy a new with this param
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl edit ds -n kube-flannel kube-flannel-ds
+daemonset.apps/kube-flannel-ds edited
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get po -n kube-flannel
+NAME                    READY   STATUS    RESTARTS   AGE
+kube-flannel-ds-j455r   1/1     Running   0          34s
+kube-flannel-ds-mh6dc   1/1     Running   0          42s
+kube-flannel-ds-q8k5c   1/1     Running   0          38s
+
+
+
+look was created with new param:
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl describe po -n kube-flannel  kube-flannel-ds-j455r
+Name:                 kube-flannel-ds-j455r
+Namespace:            kube-flannel
+Priority:             2000001000
+Priority Class Name:  system-node-critical
+Service Account:      flannel
+Node:                 worker-2/172.89.0.22
+Start Time:           Sun, 22 Mar 2026 16:58:43 -0300
+Labels:               app=flannel
+                      controller-revision-hash=755f47df7c
+                      k8s-app=flannel
+                      pod-template-generation=2
+                      tier=node
+Annotations:          <none>
+Status:               Running
+IP:                   172.89.0.22
+IPs:
+  IP:           172.89.0.22
+Controlled By:  DaemonSet/kube-flannel-ds
+Init Containers:
+  install-cni-plugin:
+    Container ID:  containerd://f6a7284509ccca82f0874dc96426116304f3e899db4a7a325c271c56b1689d81
+    Image:         ghcr.io/flannel-io/flannel-cni-plugin:v1.9.0-flannel1
+    Image ID:      ghcr.io/flannel-io/flannel-cni-plugin@sha256:c6a08fe5bcb23b19c2fc7c1e47b95a967cc924224ebedf94e8623f27b6c258fa
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      cp
+    Args:
+      -f
+      /flannel
+      /opt/cni/bin/flannel
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Sun, 22 Mar 2026 16:58:44 -0300
+      Finished:     Sun, 22 Mar 2026 16:58:44 -0300
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /opt/cni/bin from cni-plugin (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-47ct9 (ro)
+  install-cni:
+    Container ID:  containerd://830791a8eae5390ca7bb5e1927ff975827e6baab57776383d37de5ae3391eb1a
+    Image:         ghcr.io/flannel-io/flannel:v0.28.1
+    Image ID:      ghcr.io/flannel-io/flannel@sha256:6a9c170acece4457ccb9cdfe53c787cc451e87990e20451bf20070b8895fa538
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      cp
+    Args:
+      -f
+      /etc/kube-flannel/cni-conf.json
+      /etc/cni/net.d/10-flannel.conflist
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Sun, 22 Mar 2026 16:58:44 -0300
+      Finished:     Sun, 22 Mar 2026 16:58:44 -0300
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /etc/cni/net.d from cni (rw)
+      /etc/kube-flannel/ from flannel-cfg (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-47ct9 (ro)
+Containers:
+  kube-flannel:
+    Container ID:  containerd://583979f561792acc26d16bf34e8153ff10f8919dcbcab65b7a32ff596c1de155
+    Image:         ghcr.io/flannel-io/flannel:v0.28.1
+    Image ID:      ghcr.io/flannel-io/flannel@sha256:6a9c170acece4457ccb9cdfe53c787cc451e87990e20451bf20070b8895fa538
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      /opt/bin/flanneld
+    Args:
+      --ip-masq
+      --kube-subnet-mgr
+      --iface=enp0s8
+    State:          Running
+
+
+
+Lets test on demo container
+
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl run --image alpine --rm -it demo sh
+/ # apk add curl bind-tools
+( 1/24) Installing fstrm (0.6.1-r4)
+( 2/24) Installing krb5-conf (1.0-r2)
+( 3/24) Installing libcom_err (1.47.3-r0)
+( 4/24) Installing keyutils-libs (1.6.3-r4)
+( 5/24) Installing libverto (0.3.2-r2)
+( 6/24) Installing krb5-libs (1.22.1-r0)
+( 7/24) Installing json-c (0.18-r1)
+( 8/24) Installing nghttp2-libs (1.68.0-r0)
+( 9/24) Installing protobuf-c (1.5.2-r2)
+(10/24) Installing userspace-rcu (0.15.3-r0)
+(11/24) Installing libuv (1.51.0-r0)
+(12/24) Installing xz-libs (5.8.2-r0)
+(13/24) Installing libxml2 (2.13.9-r0)
+(14/24) Installing bind-libs (9.20.20-r0)
+(15/24) Installing bind-tools (9.20.20-r0)
+(16/24) Installing brotli-libs (1.2.0-r0)
+(17/24) Installing c-ares (1.34.6-r0)
+(18/24) Installing libunistring (1.4.1-r0)
+(19/24) Installing libidn2 (2.3.8-r0)
+(20/24) Installing nghttp3 (1.13.1-r0)
+(21/24) Installing libpsl (0.21.5-r3)
+(22/24) Installing zstd-libs (1.5.7-r2)
+(23/24) Installing libcurl (8.17.0-r1)
+(24/24) Installing curl (8.17.0-r1)
+Executing busybox-1.37.0-r30.trigger
+OK: 20.2 MiB in 40 packages
+
+
+/ # nslookup google.com
+;; Got recursion not available from 10.96.0.10
+;; Got recursion not available from 10.96.0.10
+;; Got recursion not available from 10.96.0.10
+Server:         10.96.0.10
+Address:        10.96.0.10#53
+
+Non-authoritative answer:
+Name:   google.com
+Address: 142.250.79.206
+Name:   google.com
+Address: 2800:3f0:4001:808::200e
+
+
+
+
+🧩 Problem Summary — Pods can’t communicate across nodes (Vagrant + Flannel)
+🔴 Symptoms
+
+Pods only communicate within the same node
+
+Cross-node communication fails:
+
+❌ ping between pods on different nodes → fails
+
+❌ nslookup kubernetes → timeout
+
+❌ apk add / internet access → DNS errors
+
+Example:
+
+DNS: transient error (try again later)
+ping: bad address 'google.com'
+
+But:
+
+✅ Pod → same node works
+
+❌ Pod → different node fails
+
+🎯 Root Cause
+
+This is a classic Vagrant + Flannel issue:
+
+Vagrant creates multiple network interfaces:
+
+eth0 → NAT (10.0.2.15)
+
+enp0s8 → private network (172.89.x.x)
+
+By default, Flannel picks the wrong interface (NAT)
+
+👉 Result:
+
+Pod network is built on 10.0.2.x (NAT)
+
+Nodes cannot route traffic properly between each other
+
+Overlay network breaks
+
+🔥 Why it breaks everything
+
+Flannel uses the wrong IP for:
+
+Pod routing
+
+VXLAN encapsulation
+
+kube-dns (CoreDNS) becomes unreachable across nodes
+
+API → kubelet communication may also fail indirectly
+
+✅ Solution
+
+Force Flannel to use the correct interface (enp0s8)
+
+🔧 Step-by-step Fix
+1. Edit Flannel DaemonSet
+kubectl edit ds -n kube-flannel kube-flannel-ds
+2. Add the correct interface
+
+Inside container args:
+
+- --ip-masq
+- --kube-subnet-mgr
+- --iface=enp0s8
+3. Save → Flannel restarts automatically
+kubectl get pods -n kube-flannel
+
+New pods will be created with correct config.
+
+4. Verify
+kubectl describe pod -n kube-flannel <pod>
+
+Check:
+
+--iface=enp0s8
+🧪 Validation
+Before fix:
+
+❌ DNS broken
+
+❌ Cross-node communication fails
+
+After fix:
+
+✅ apk add curl works
+
+✅ nslookup google.com works
+
+✅ Cross-node pod communication works
+
+✅ Cluster DNS (10.96.0.10) responds
+
+Example:
+
+nslookup google.com
+Server: 10.96.0.10
+
+Name: google.com
+Address: 142.x.x.x
+🧠 Key Insight
+
+👉 In Vagrant environments:
+
+Always force network interface for CNI plugins
+
+Otherwise, they may pick:
+
+NAT interface ❌
+
+instead of private cluster network ✅
+
+📌 Final Takeaways
+
+Problem was not DNS itself
+
+Problem was network overlay misconfiguration
+
+Fixing Flannel interface:
+
+restores routing
+
+restores DNS
+
+restores internet access
+
+⚡ Quick Checklist (for future)
+
+When using Vagrant + Kubernetes:
+
+✅ Set Flannel --iface
+
+❌ Never rely on automatic interface detection
