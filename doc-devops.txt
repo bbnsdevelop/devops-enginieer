@@ -1646,3 +1646,8 @@ When using Vagrant + Kubernetes:
 ✅ Set Flannel --iface
 
 ❌ Never rely on automatic interface detection
+
+
+
+using commandline to get output yaml pod to apply it 
+kubectl run --image hashicorp/terraform:latest terraform-demo --dry-run -oyaml > ../yamls/terraform.yaml 
