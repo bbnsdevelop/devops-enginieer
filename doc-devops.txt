@@ -945,3 +945,315 @@ nginx   0/1     ContainerCreating   0          5s
 b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get po -n dev
 NAME    READY   STATUS    RESTARTS   AGE
 nginx   1/1     Running   0          23s
+
+
+
+# possible problem when we use vagrant to create ou clusters
+When we try to get logs by kubectl logs -n dev nginx
+
+Occurs an error 
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer(main)$ kubectl logs -n dev nginx
+Error from server (NotFound): the server could not find the requested resource ( pods/log nginx)
+
+even this pod exist
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer(main)$ kubectl get po -n dev
+NAME    READY   STATUS    RESTARTS      AGE
+nginx   1/1     Running   1 (13m ago)   20h
+
+
+troubleshooting it
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer(main)$ kubectl logs -n dev nginx -v9
+I0321 20:36:42.768719   23906 loader.go:402] Config loaded from file:  /home/b2/.kube/config
+I0321 20:36:42.770294   23906 envvar.go:172] "Feature gate default state" feature="ClientsAllowCBOR" enabled=false
+I0321 20:36:42.770391   23906 envvar.go:172] "Feature gate default state" feature="ClientsPreferCBOR" enabled=false
+I0321 20:36:42.770417   23906 envvar.go:172] "Feature gate default state" feature="InOrderInformers" enabled=true
+I0321 20:36:42.770457   23906 envvar.go:172] "Feature gate default state" feature="InformerResourceVersion" enabled=false
+I0321 20:36:42.770505   23906 envvar.go:172] "Feature gate default state" feature="WatchListClient" enabled=false
+I0321 20:36:42.777306   23906 helper.go:105] "Request Body" body=""
+I0321 20:36:42.777512   23906 round_trippers.go:527] "Request" curlCommand=<
+        curl -v -XGET  -H "User-Agent: kubectl/v1.34.6 (linux/amd64) kubernetes/8b2bf66" -H "Accept: application/json, */*" 'https://172.89.0.11:6443/api/v1/namespaces/dev/pods/nginx'
+ >
+I0321 20:36:42.778911   23906 round_trippers.go:562] "HTTP Trace: Dial succeed" network="tcp" address="172.89.0.11:6443"
+I0321 20:36:42.819925   23906 round_trippers.go:632] "Response" verb="GET" url="https://172.89.0.11:6443/api/v1/namespaces/dev/pods/nginx" status="200 OK" headers=<
+        Audit-Id: beb8eb45-2410-4b5e-b5c1-d05828a25ae0
+        Cache-Control: no-cache, private
+        Content-Type: application/json
+        Date: Sat, 21 Mar 2026 23:36:42 GMT
+        X-Kubernetes-Pf-Flowschema-Uid: a3caede4-2c62-4c7b-8e1c-91e0f186a950
+        X-Kubernetes-Pf-Prioritylevel-Uid: 99e27b6f-ccc8-4c1b-a6e0-a2e6cae9076b
+ > milliseconds=42 dnsLookupMilliseconds=0 dialMilliseconds=0 tlsHandshakeMilliseconds=26 serverProcessingMilliseconds=13
+I0321 20:36:42.822632   23906 helper.go:105] "Response Body" body=<
+        {"kind":"Pod","apiVersion":"v1","metadata":{"name":"nginx","namespace":"dev","uid":"dcafceb1-cf25-4d83-81d6-47c36404735a","resourceVersion":"116364","generation":1,"creationTimestamp":"2026-03-21T02:16:33Z","annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"apiVersion\":\"v1\",\"kind\":\"Pod\",\"metadata\":{\"annotations\":{},\"name\":\"nginx\",\"namespace\":\"dev\"},\"spec\":{\"containers\":[{\"image\":\"nginx:1.14.2\",\"name\":\"nginx\",\"ports\":[{\"containerPort\":80}]}]}}\n"},"managedFields":[{"manager":"kubectl-client-side-apply","operation":"Update","apiVersion":"v1","time":"2026-03-21T02:16:33Z","fieldsType":"FieldsV1","fieldsV1":{"f:metadata":{"f:annotations":{".":{},"f:kubectl.kubernetes.io/last-applied-configuration":{}}},"f:spec":{"f:containers":{"k:{\"name\":\"nginx\"}":{".":{},"f:image":{},"f:imagePullPolicy":{},"f:name":{},"f:ports":{".":{},"k:{\"containerPort\":80,\"protocol\":\"TCP\"}":{".":{},"f:containerPort":{},"f:protocol":{}}},"f:resources":{},"f:terminationMessagePath":{},"f:terminationMessagePolicy":{}}},"f:dnsPolicy":{},"f:enableServiceLinks":{},"f:restartPolicy":{},"f:schedulerName":{},"f:securityContext":{},"f:terminationGracePeriodSeconds":{}}}},{"manager":"kubelet","operation":"Update","apiVersion":"v1","time":"2026-03-21T22:42:36Z","fieldsType":"FieldsV1","fieldsV1":{"f:status":{"f:conditions":{"k:{\"type\":\"ContainersReady\"}":{".":{},"f:lastProbeTime":{},"f:lastTransitionTime":{},"f:observedGeneration":{},"f:status":{},"f:type":{}},"k:{\"type\":\"Initialized\"}":{".":{},"f:lastProbeTime":{},"f:lastTransitionTime":{},"f:observedGeneration":{},"f:status":{},"f:type":{}},"k:{\"type\":\"PodReadyToStartContainers\"}":{".":{},"f:lastProbeTime":{},"f:lastTransitionTime":{},"f:observedGeneration":{},"f:status":{},"f:type":{}},"k:{\"type\":\"PodScheduled\"}":{"f:observedGeneration":{}},"k:{\"type\":\"Ready\"}":{".":{},"f:lastProbeTime":{},"f:lastTransitionTime":{},"f:observedGeneration":{},"f:status":{},"f:type":{}}},"f:containerStatuses":{},"f:hostIP":{},"f:hostIPs":{},"f:observedGeneration":{},"f:phase":{},"f:podIP":{},"f:podIPs":{".":{},"k:{\"ip\":\"10.244.2.3\"}":{".":{},"f:ip":{}}},"f:startTime":{}}},"subresource":"status"}]},"spec":{"volumes":[{"name":"kube-api-access-wtpzs","projected":{"sources":[{"serviceAccountToken":{"expirationSeconds":3607,"path":"token"}},{"configMap":{"name":"kube-root-ca.crt","items":[{"key":"ca.crt","path":"ca.crt"}]}},{"downwardAPI":{"items":[{"path":"namespace","fieldRef":{"apiVersion":"v1","fieldPath":"metadata.namespace"}}]}}],"defaultMode":420}}],"containers":[{"name":"nginx","image":"nginx:1.14.2","ports":[{"containerPort":80,"protocol":"TCP"}],"resources":{},"volumeMounts":[{"name":"kube-api-access-wtpzs","readOnly":true,"mountPath":"/var/run/secrets/kubernetes.io/serviceaccount"}],"terminationMessagePath":"/dev/termination-log","terminationMessagePolicy":"File","imagePullPolicy":"IfNotPresent"}],"restartPolicy":"Always","terminationGracePeriodSeconds":30,"dnsPolicy":"ClusterFirst","serviceAccountName":"default","serviceAccount":"default","nodeName":"worker-2","securityContext":{},"schedulerName":"default-scheduler","tolerations":[{"key":"node.kubernetes.io/not-ready","operator":"Exists","effect":"NoExecute","tolerationSeconds":300},{"key":"node.kubernetes.io/unreachable","operator":"Exists","effect":"NoExecute","tolerationSeconds":300}],"priority":0,"enableServiceLinks":true,"preemptionPolicy":"PreemptLowerPriority"},"status":{"observedGeneration":1,"phase":"Running","conditions":[{"type":"PodReadyToStartContainers","observedGeneration":1,"status":"True","lastProbeTime":null,"lastTransitionTime":"2026-03-21T22:42:36Z"},{"type":"Initialized","observedGeneration":1,"status":"True","lastProbeTime":null,"lastTransitionTime":"2026-03-21T02:16:33Z"},{"type":"Ready","observedGeneration":1,"status":"True","lastProbeTime":null,"lastTransitionTime":"2026-03-21T22:42:36Z"},{"type":"ContainersReady","observedGeneration":1,"status":"True","lastProbeTime":null,"lastTransitionTime":"2026-03-21T22:42:36Z"},{"type":"PodScheduled","observedGeneration":1,"status":"True","lastProbeTime":null,"lastTransitionTime":"2026-03-21T02:16:33Z"}],"hostIP":"10.0.2.15","hostIPs":[{"ip":"10.0.2.15"}],"podIP":"10.244.2.3","podIPs":[{"ip":"10.244.2.3"}],"startTime":"2026-03-21T02:16:33Z","containerStatuses":[{"name":"nginx","state":{"running":{"startedAt":"2026-03-21T22:42:35Z"}},"lastState":{"terminated":{"exitCode":255,"reason":"Unknown","startedAt":"2026-03-21T02:16:41Z","finishedAt":"2026-03-21T22:42:10Z","containerID":"containerd://7cb65acbcbb89de778dd326897c41ecc86e59eba742f1b26b7f16ac7a674e1e0"}},"ready":true,"restartCount":1,"image":"docker.io/library/nginx:1.14.2","imageID":"docker.io/library/nginx@sha256:f7988fb6c02e0ce69257d9bd9cf37ae20a60f1df7563c3a2a6abe24160306b8d","containerID":"containerd://74431a9bc0f678a060b5260feebc8a799f930ef9a0d1862c5dd8dcd8048f825e","started":true,"resources":{},"volumeMounts":[{"name":"kube-api-access-wtpzs","mountPath":"/var/run/secrets/kubernetes.io/serviceaccount","readOnly":true,"recursiveReadOnly":"Disabled"}],"user":{"linux":{"uid":0,"gid":0,"supplementalGroups":[0]}}}],"qosClass":"BestEffort"}}
+ >
+I0321 20:36:42.832245   23906 logs.go:469] "Request Body" body=""
+I0321 20:36:42.832504   23906 round_trippers.go:527] "Request" curlCommand=<
+        curl -v -XGET  -H "Accept: application/json, */*" -H "User-Agent: kubectl/v1.34.6 (linux/amd64) kubernetes/8b2bf66" 'https://172.89.0.11:6443/api/v1/namespaces/dev/pods/nginx/log?container=nginx'
+ >
+I0321 20:36:42.871556   23906 round_trippers.go:632] "Response" verb="GET" url="https://172.89.0.11:6443/api/v1/namespaces/dev/pods/nginx/log?container=nginx" status="404 Not Found" headers=<
+        Audit-Id: 2cb21fdf-bd4e-4e3f-bb1b-224829073c4d
+        Cache-Control: no-cache, private
+        Content-Length: 224
+        Content-Type: application/json
+        Date: Sat, 21 Mar 2026 23:36:42 GMT
+ > milliseconds=38 getConnectionMilliseconds=0 serverProcessingMilliseconds=38
+I0321 20:36:42.872273   23906 interrupt.go:103] "Response Body" body=<
+        {"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"the server could not find the requested resource ( pods/log nginx)","reason":"NotFound","details":{"name":"nginx","kind":"pods/log"},"code":404}
+ >
+I0321 20:36:42.873625   23906 helpers.go:246] server response object: %s[{
+  "metadata": {},
+  "status": "Failure",
+  "message": "the server could not find the requested resource ( pods/log nginx)",
+  "reason": "NotFound",
+  "details": {
+    "name": "nginx",
+    "kind": "pods/log"
+  },
+  "code": 404
+}]
+Error from server (NotFound): the server could not find the requested resource ( pods/log nginx)
+
+
+Logs/kubctl --> apiserver open connection with kubelet to get where is pod is running and not get by ip default 
+
+how to fix it? https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/
+--node-ip string
+
+we need change on workers not in master this para on /usr/lib/systemd/system/kubelet.service.d
+
+root@worker-1:/home/vagrant# systemctl status kubelet
+● kubelet.service - kubelet: The Kubernetes Node Agent
+     Loaded: loaded (/lib/systemd/system/kubelet.service; enabled; vendor preset: enabled)
+    Drop-In: /usr/lib/systemd/system/kubelet.service.d
+             └─10-kubeadm.conf
+     Active: active (running) since Sat 2026-03-21 22:41:26 UTC; 1h 8min ago
+       Docs: https://kubernetes.io/docs/
+   Main PID: 1315 (kubelet)
+      Tasks: 9 (limit: 2307)
+     Memory: 35.5M
+        CPU: 1min 24.226s
+     CGroup: /system.slice/kubelet.service
+             └─1315 /usr/bin/kubelet --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf --config=/var/lib/kubelet/config.yaml
+
+Mar 21 22:41:27 worker-1 kubelet[1315]: I0321 22:41:27.723017    1315 reconciler_common.go:251] "operationExecutor.VerifyControllerAttachedVolume started for volume \"cni-plugin\" (UniqueName: \"kubernetes.io/host-path/6823cbd2-d40e-4d85->
+Mar 21 22:41:27 worker-1 kubelet[1315]: I0321 22:41:27.726383    1315 reconciler_common.go:251] "operationExecutor.VerifyControllerAttachedVolume started for volume \"cni\" (UniqueName: \"kubernetes.io/host-path/6823cbd2-d40e-4d85-b921-29>
+Mar 21 22:41:27 worker-1 kubelet[1315]: I0321 22:41:27.781434    1315 swap_util.go:78] "error creating dir to test if tmpfs noswap is enabled. Assuming not supported" mount path="" error="stat /var/lib/kubelet/plugins/kubernetes.io/empty->
+Mar 21 22:41:28 worker-1 kubelet[1315]: I0321 22:41:28.037721    1315 scope.go:122] "RemoveContainer" containerID="e34448e972a0bead7acbb97369db6c49a5e043007837cb6e3eda08fe48527b6d"
+Mar 21 22:41:28 worker-1 kubelet[1315]: I0321 22:41:28.067210    1315 scope.go:122] "RemoveContainer" containerID="2124ce466502fe292bf1e90ef8082bf1ef68d0c03e5a8c36f62a0d9feedad747"
+Mar 21 22:41:28 worker-1 kubelet[1315]: E0321 22:41:28.327588    1315 log.go:32] "RunPodSandbox from runtime service failed" err="rpc error: code = Unknown desc = failed to setup network for sandbox \"af68e288bfc802b0f84869948659f6209879d>
+Mar 21 22:41:28 worker-1 kubelet[1315]: E0321 22:41:28.327644    1315 kuberuntime_sandbox.go:71] "Failed to create sandbox for pod" err="rpc error: code = Unknown desc = failed to setup network for sandbox \"af68e288bfc802b0f84869948659f6>
+Mar 21 22:41:28 worker-1 kubelet[1315]: E0321 22:41:28.327686    1315 kuberuntime_manager.go:1558] "CreatePodSandbox for pod failed" err="rpc error: code = Unknown desc = failed to setup network for sandbox \"af68e288bfc802b0f84869948659f>
+Mar 21 22:41:28 worker-1 kubelet[1315]: E0321 22:41:28.327773    1315 pod_workers.go:1324] "Error syncing pod, skipping" err="failed to \"CreatePodSandbox\" for \"nginx_default(7147e6d0-22a6-4d4f-bc64-30921b1f5153)\" with CreatePodSandbox>
+Mar 21 22:41:30 worker-1 kubelet[1315]: I0321 22:41:30.262448    1315 scope.go:122] "RemoveContainer" containerID="8636a37822e71fa550160e387e4c2f0f62cf440a14079bfaa232092092d7557a"
+
+
+vagrant@worker-1:~$ ip a | grep 172
+    inet 172.89.0.21/24 brd 172.89.0.255 scope global enp0s8
+
+vagrant@worker-2:~$ ip a | grep 172
+    inet 172.89.0.22/24 brd 172.89.0.255 scope global enp0s8
+
+apply change
+root@worker-1:/home/vagrant# cat /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf | grep EXTRA
+Environment="KUBELET_EXTRA_ARGS=--node-ip=172.89.0.21"
+
+
+
+root@worker-2:/home/vagrant# cat /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf | grep EXTRA
+Environment="KUBELET_EXTRA_ARGS=--node-ip=172.89.0.22"
+
+
+
+now update it
+
+systemctl daemon-reload
+systemctl restart kubelet
+
+
+option 2
+
+Fix (this will 100% solve it)
+Step 1 — Edit the correct file
+vi /etc/default/kubelet
+
+Add:
+
+KUBELET_EXTRA_ARGS="--node-ip=172.89.0.22"
+
+(worker-2)
+
+For worker-1:
+
+KUBELET_EXTRA_ARGS="--node-ip=172.89.0.21"
+Step 2 — Restart kubelet properly
+systemctl daemon-reexec
+systemctl daemon-reload
+systemctl restart kubelet
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get node -owide
+NAME       STATUS   ROLES           AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION       CONTAINER-RUNTIME
+master-1   Ready    control-plane   11d   v1.35.2   10.0.2.15     <none>        Ubuntu 22.04.5 LTS   5.15.0-173-generic   containerd://2.2.1
+worker-1   Ready    <none>          10d   v1.35.2   172.89.0.21   <none>        Ubuntu 22.04.5 LTS   5.15.0-171-generic   containerd://2.2.1
+worker-2   Ready    <none>          10d   v1.35.2   172.89.0.22   <none>        Ubuntu 22.04.5 LTS   5.15.0-173-generic   containerd://2.2.1
+
+
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl logs -n dev nginx2 -v9
+I0321 22:07:54.398241   33898 loader.go:402] Config loaded from file:  /home/b2/.kube/config
+I0321 22:07:54.399495   33898 envvar.go:172] "Feature gate default state" feature="ClientsAllowCBOR" enabled=false
+I0321 22:07:54.399567   33898 envvar.go:172] "Feature gate default state" feature="ClientsPreferCBOR" enabled=false
+I0321 22:07:54.399604   33898 envvar.go:172] "Feature gate default state" feature="InOrderInformers" enabled=true
+I0321 22:07:54.399636   33898 envvar.go:172] "Feature gate default state" feature="InformerResourceVersion" enabled=false
+I0321 22:07:54.399670   33898 envvar.go:172] "Feature gate default state" feature="WatchListClient" enabled=false
+I0321 22:07:54.409900   33898 helper.go:105] "Request Body" body=""
+I0321 22:07:54.410080   33898 round_trippers.go:527] "Request" curlCommand=<
+        curl -v -XGET  -H "Accept: application/json, */*" -H "User-Agent: kubectl/v1.34.6 (linux/amd64) kubernetes/8b2bf66" 'https://172.89.0.11:6443/api/v1/namespaces/dev/pods/nginx2'
+ >
+I0321 22:07:54.411604   33898 round_trippers.go:562] "HTTP Trace: Dial succeed" network="tcp" address="172.89.0.11:6443"
+I0321 22:07:54.445175   33898 round_trippers.go:632] "Response" verb="GET" url="https://172.89.0.11:6443/api/v1/namespaces/dev/pods/nginx2" status="200 OK" headers=<
+        Audit-Id: fef136fa-6e82-4024-9fd9-1209579f1f15
+        Cache-Control: no-cache, private
+        Content-Type: application/json
+        Date: Sun, 22 Mar 2026 01:07:54 GMT
+        X-Kubernetes-Pf-Flowschema-Uid: a3caede4-2c62-4c7b-8e1c-91e0f186a950
+        X-Kubernetes-Pf-Prioritylevel-Uid: 99e27b6f-ccc8-4c1b-a6e0-a2e6cae9076b
+ > milliseconds=34 dnsLookupMilliseconds=0 dialMilliseconds=0 tlsHandshakeMilliseconds=23 serverProcessingMilliseconds=8
+I0321 22:07:54.445790   33898 helper.go:105] "Response Body" body=<
+        {"kind":"Pod","apiVersion":"v1","metadata":{"name":"nginx2","namespace":"dev","uid":"ad9e5ef2-a3e4-4552-b329-16a3eb4a313d","resourceVersion":"129351","generation":1,"creationTimestamp":"2026-03-22T01:06:38Z","annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"apiVersion\":\"v1\",\"kind\":\"Pod\",\"metadata\":{\"annotations\":{},\"name\":\"nginx2\",\"namespace\":\"dev\"},\"spec\":{\"containers\":[{\"image\":\"nginx:1.14.2\",\"name\":\"nginx\",\"ports\":[{\"containerPort\":80}]}]}}\n"},"managedFields":[{"manager":"kubectl-client-side-apply","operation":"Update","apiVersion":"v1","time":"2026-03-22T01:06:38Z","fieldsType":"FieldsV1","fieldsV1":{"f:metadata":{"f:annotations":{".":{},"f:kubectl.kubernetes.io/last-applied-configuration":{}}},"f:spec":{"f:containers":{"k:{\"name\":\"nginx\"}":{".":{},"f:image":{},"f:imagePullPolicy":{},"f:name":{},"f:ports":{".":{},"k:{\"containerPort\":80,\"protocol\":\"TCP\"}":{".":{},"f:containerPort":{},"f:protocol":{}}},"f:resources":{},"f:terminationMessagePath":{},"f:terminationMessagePolicy":{}}},"f:dnsPolicy":{},"f:enableServiceLinks":{},"f:restartPolicy":{},"f:schedulerName":{},"f:securityContext":{},"f:terminationGracePeriodSeconds":{}}}},{"manager":"kubelet","operation":"Update","apiVersion":"v1","time":"2026-03-22T01:06:39Z","fieldsType":"FieldsV1","fieldsV1":{"f:status":{"f:conditions":{"k:{\"type\":\"ContainersReady\"}":{".":{},"f:lastProbeTime":{},"f:lastTransitionTime":{},"f:observedGeneration":{},"f:status":{},"f:type":{}},"k:{\"type\":\"Initialized\"}":{".":{},"f:lastProbeTime":{},"f:lastTransitionTime":{},"f:observedGeneration":{},"f:status":{},"f:type":{}},"k:{\"type\":\"PodReadyToStartContainers\"}":{".":{},"f:lastProbeTime":{},"f:lastTransitionTime":{},"f:observedGeneration":{},"f:status":{},"f:type":{}},"k:{\"type\":\"PodScheduled\"}":{"f:observedGeneration":{}},"k:{\"type\":\"Ready\"}":{".":{},"f:lastProbeTime":{},"f:lastTransitionTime":{},"f:observedGeneration":{},"f:status":{},"f:type":{}}},"f:containerStatuses":{},"f:hostIP":{},"f:hostIPs":{},"f:observedGeneration":{},"f:phase":{},"f:podIP":{},"f:podIPs":{".":{},"k:{\"ip\":\"10.244.1.5\"}":{".":{},"f:ip":{}}},"f:startTime":{}}},"subresource":"status"}]},"spec":{"volumes":[{"name":"kube-api-access-p6j24","projected":{"sources":[{"serviceAccountToken":{"expirationSeconds":3607,"path":"token"}},{"configMap":{"name":"kube-root-ca.crt","items":[{"key":"ca.crt","path":"ca.crt"}]}},{"downwardAPI":{"items":[{"path":"namespace","fieldRef":{"apiVersion":"v1","fieldPath":"metadata.namespace"}}]}}],"defaultMode":420}}],"containers":[{"name":"nginx","image":"nginx:1.14.2","ports":[{"containerPort":80,"protocol":"TCP"}],"resources":{},"volumeMounts":[{"name":"kube-api-access-p6j24","readOnly":true,"mountPath":"/var/run/secrets/kubernetes.io/serviceaccount"}],"terminationMessagePath":"/dev/termination-log","terminationMessagePolicy":"File","imagePullPolicy":"IfNotPresent"}],"restartPolicy":"Always","terminationGracePeriodSeconds":30,"dnsPolicy":"ClusterFirst","serviceAccountName":"default","serviceAccount":"default","nodeName":"worker-1","securityContext":{},"schedulerName":"default-scheduler","tolerations":[{"key":"node.kubernetes.io/not-ready","operator":"Exists","effect":"NoExecute","tolerationSeconds":300},{"key":"node.kubernetes.io/unreachable","operator":"Exists","effect":"NoExecute","tolerationSeconds":300}],"priority":0,"enableServiceLinks":true,"preemptionPolicy":"PreemptLowerPriority"},"status":{"observedGeneration":1,"phase":"Running","conditions":[{"type":"PodReadyToStartContainers","observedGeneration":1,"status":"True","lastProbeTime":null,"lastTransitionTime":"2026-03-22T01:06:39Z"},{"type":"Initialized","observedGeneration":1,"status":"True","lastProbeTime":null,"lastTransitionTime":"2026-03-22T01:06:38Z"},{"type":"Ready","observedGeneration":1,"status":"True","lastProbeTime":null,"lastTransitionTime":"2026-03-22T01:06:39Z"},{"type":"ContainersReady","observedGeneration":1,"status":"True","lastProbeTime":null,"lastTransitionTime":"2026-03-22T01:06:39Z"},{"type":"PodScheduled","observedGeneration":1,"status":"True","lastProbeTime":null,"lastTransitionTime":"2026-03-22T01:06:38Z"}],"hostIP":"172.89.0.21","hostIPs":[{"ip":"172.89.0.21"}],"podIP":"10.244.1.5","podIPs":[{"ip":"10.244.1.5"}],"startTime":"2026-03-22T01:06:38Z","containerStatuses":[{"name":"nginx","state":{"running":{"startedAt":"2026-03-22T01:06:39Z"}},"lastState":{},"ready":true,"restartCount":0,"image":"docker.io/library/nginx:1.14.2","imageID":"docker.io/library/nginx@sha256:f7988fb6c02e0ce69257d9bd9cf37ae20a60f1df7563c3a2a6abe24160306b8d","containerID":"containerd://c3415217305fcb07348c8f008e0f2e5317e3317aa1e41ee5f5333722ef8fb96a","started":true,"resources":{},"volumeMounts":[{"name":"kube-api-access-p6j24","mountPath":"/var/run/secrets/kubernetes.io/serviceaccount","readOnly":true,"recursiveReadOnly":"Disabled"}],"user":{"linux":{"uid":0,"gid":0,"supplementalGroups":[0]}}}],"qosClass":"BestEffort"}}
+ >
+I0321 22:07:54.455942   33898 logs.go:469] "Request Body" body=""
+I0321 22:07:54.456150   33898 round_trippers.go:527] "Request" curlCommand=<
+        curl -v -XGET  -H "Accept: application/json, */*" -H "User-Agent: kubectl/v1.34.6 (linux/amd64) kubernetes/8b2bf66" 'https://172.89.0.11:6443/api/v1/namespaces/dev/pods/nginx2/log?container=nginx'
+ >
+I0321 22:07:54.471510   33898 round_trippers.go:632] "Response" verb="GET" url="https://172.89.0.11:6443/api/v1/namespaces/dev/pods/nginx2/log?container=nginx" status="200 OK" headers=<
+        Audit-Id: 249cd7fc-f74c-45b5-be94-10296f7e78bd
+        Cache-Control: no-cache, private
+        Content-Type: text/plain
+        Date: Sun, 22 Mar 2026 01:07:54 GMT
+ > milliseconds=15 getConnectionMilliseconds=0 serverProcessingMilliseconds=14
+
+
+# Summary about this issue:
+🧩 Issue: kubectl logs returning 404 in Vagrant-based Kubernetes cluster
+📌 Problem
+
+When running:
+
+kubectl logs -n dev nginx
+
+We received:
+
+Error from server (NotFound): the server could not find the requested resource (pods/log nginx)
+
+Even though the pod existed and was in Running state.
+
+🔍 Root Cause
+
+This issue is common when using Vagrant-based clusters.
+
+Nodes had multiple network interfaces:
+
+NAT interface → 10.0.2.15
+
+Private network → 172.89.x.x
+
+The kubelet automatically picked the wrong IP (NAT)
+
+Result:
+
+Kubernetes API Server tried to reach kubelet via 10.0.2.15
+
+This IP is not reachable between nodes
+
+Logs endpoint (pods/log) failed → 404 NotFound
+
+⚙️ Why it happens
+
+kubelet uses:
+
+--node-ip
+
+If not set:
+
+It defaults to the first interface (usually NAT in Vagrant)
+
+✅ Solution
+
+Explicitly configure the correct node IP for each worker.
+
+✔️ Correct approach (persistent and recommended)
+
+Edit:
+
+/etc/default/kubelet
+
+Add:
+
+KUBELET_EXTRA_ARGS="--node-ip=<NODE_PRIVATE_IP>"
+
+Example:
+
+worker-1
+
+KUBELET_EXTRA_ARGS="--node-ip=172.89.0.21"
+
+worker-2
+
+KUBELET_EXTRA_ARGS="--node-ip=172.89.0.22"
+🔄 Apply changes
+systemctl daemon-reexec
+systemctl daemon-reload
+systemctl restart kubelet
+⚠️ Important Detail (Why previous attempt failed)
+
+You tried modifying:
+
+/usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf
+
+👉 But this file is overridden by kubeadm-managed configs, especially:
+
+/var/lib/kubelet/kubeadm-flags.env
+/etc/default/kubelet   ✅ (correct override location)
+
+👉 Therefore:
+
+Changes in 10-kubeadm.conf may not take effect reliably
+
+/etc/default/kubelet is the intended override layer
+
+✅ Verification
+
+Check node IPs:
+
+kubectl get nodes -o wide
+
+Before:
+
+worker-1   INTERNAL-IP: 10.0.2.15 ❌
+
+After:
+
+worker-1   INTERNAL-IP: 172.89.0.21 ✅
+🎯 Result
+
+API Server can now reach kubelet
+
+kubectl logs works correctly
+
+Logs endpoint returns 200 OK
+
+🧠 Final Note
+
+If logs are empty after fix:
+
+👉 This is expected behavior, not an error
+Containers only produce logs when the application writes to stdout/stderr (e.g., nginx needs traffic).
+
+💡 Best Practice
+
+For kubeadm clusters, always configure node IP via:
+
+/etc/default/kubelet (quick fix)
+or
+
+kubeadm config → nodeRegistration.kubeletExtraArgs (ideal for automation)
