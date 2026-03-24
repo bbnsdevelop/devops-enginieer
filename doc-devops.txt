@@ -1651,3 +1651,259 @@ When using Vagrant + Kubernetes:
 
 using commandline to get output yaml pod to apply it 
 kubectl run --image hashicorp/terraform:latest terraform-demo --dry-run -oyaml > ../yamls/terraform.yaml 
+
+
+
+# initContainer
+
+🧩 What is an initContainer?
+
+An initContainer is a container that:
+
+Runs before the main container(s)
+
+Must complete successfully before the pod starts
+
+Runs sequentially (one after another)
+
+Can block the app until conditions are met
+
+🔍 Your Example (fixed + explained)
+
+First, small typo fix:
+
+initContainers:
+  - name: wait-for-dns
+    image: busybox:1.28
+    command:
+      - sh
+      - -c
+      - |
+        until nslookup mysql; do
+          echo "Trying to resolve..."
+          sleep 1
+        done
+🧠 What this does
+
+Runs a tiny container (busybox)
+
+Keeps retrying:
+
+nslookup mysql
+
+Only exits when:
+
+DNS resolves successfully
+
+Then → main container starts
+
+🎯 Why this is useful
+
+Without this:
+
+Your app may start before dependencies are ready
+
+Leads to:
+
+❌ CrashLoopBackOff
+
+❌ connection refused
+
+❌ random startup failures
+
+With initContainer:
+
+✅ deterministic startup
+
+✅ dependency validation
+
+✅ cleaner app logic (no retry code needed)
+
+🔥 Common Real-World Use Cases
+1. Wait for a Service (like your example)
+until nslookup my-db; do sleep 2; done
+
+👉 Ensures DNS + service exists
+
+2. Wait for TCP port (stronger check)
+until nc -z my-db 3306; do
+  echo "Waiting for DB..."
+  sleep 2
+done
+
+👉 Ensures service is actually accepting connections
+
+3. Wait for HTTP endpoint
+until wget -qO- http://api:8080/health; do
+  echo "Waiting API..."
+  sleep 2
+done
+
+👉 Ensures app is fully ready, not just running
+
+4. Database migration / setup
+initContainers:
+  - name: migrate-db
+    image: myapp
+    command: ["sh", "-c", "python migrate.py"]
+
+👉 Runs before app starts
+
+5. Download config / secrets
+- name: fetch-config
+  image: curlimages/curl
+  command:
+    - sh
+    - -c
+    - curl -o /config/app.yaml http://config-server/app.yaml
+6. Fix permissions (very common)
+- name: fix-permissions
+  image: busybox
+  command: ["sh", "-c", "chmod -R 777 /data"]
+  volumeMounts:
+    - name: data
+      mountPath: /data
+⚙️ Key Behavior (IMPORTANT)
+🔁 Retry logic
+
+If initContainer fails:
+
+Kubernetes will restart it
+
+Pod stays in:
+
+Init:CrashLoopBackOff
+⛔ Main container NEVER starts until:
+
+ALL initContainers succeed
+
+📊 Execution order
+initContainers:
+  - step-1
+  - step-2
+
+Execution:
+
+step-1 → step-2 → main container
+🆚 initContainer vs readinessProbe
+Feature	initContainer	readinessProbe
+Runs before app	✅	❌
+Blocks startup	✅	❌
+Runs once	✅	❌ (continuous)
+Use case	dependencies	health
+
+👉 They are complementary, not replacements
+
+⚠️ Common Mistakes
+❌ Only checking DNS
+
+Your example:
+
+nslookup mysql
+
+Problem:
+
+DNS may resolve
+
+But DB still not ready
+
+👉 Better:
+
+nc -z mysql 3306
+❌ Infinite loops without timeout
+
+Bad:
+
+until nc -z db 3306; do sleep 1; done
+
+Better:
+
+for i in $(seq 1 30); do
+  nc -z db 3306 && exit 0
+  sleep 2
+done
+exit 1
+
+👉 avoids hanging forever
+
+💡 Pro Pattern (Production Ready)
+initContainers:
+  - name: wait-for-db
+    image: busybox:1.35
+    command:
+      - sh
+      - -c
+      - |
+        for i in $(seq 1 30); do
+          nc -z mysql 3306 && exit 0
+          echo "Waiting for DB..."
+          sleep 2
+        done
+        echo "DB not ready in time"
+        exit 1
+🧠 When YOU should use initContainers
+
+Use them when:
+
+🔗 App depends on another service
+
+🗄️ DB must be ready first
+
+🌐 DNS/service discovery must exist
+
+📦 You need pre-setup tasks
+
+🔐 Permissions/config must be prepared
+
+🚫 When NOT to use
+
+For long-running background tasks
+
+For app health checks
+
+For continuous validation
+
+🧾 Summary
+
+initContainers = startup gatekeeper
+
+They:
+
+run first
+
+must succeed
+
+control app startup timing
+
+Essential for:
+
+reliable deployments
+
+avoiding race conditions
+
+
+watch status Pod
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get po -w
+NAME                   READY   STATUS     RESTARTS   AGE
+nginx-init-container   0/1     Init:0/1   0          3m21s
+
+
+after create this service our container nginx-init-container will go to the next step 
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer(main)$ kubectl create service clusterip mysqlsql --tcp=80:80
+
+
+because now it can resolver it
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer(main)$ kubectl create service clusterip mysqlsql --tcp=80:80
+service/mysqlsql created
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get po -w
+NAME                   READY   STATUS     RESTARTS   AGE
+nginx-init-container   0/1     Init:0/1   0          3m21s
+nginx-init-container   0/1     PodInitializing   0          6m30s
+nginx-init-container   1/1     Running           0          6m31s
+
+
+delete resource 
+kubectl delete po nginx-init-container -n default 
