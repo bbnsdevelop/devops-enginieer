@@ -1907,3 +1907,312 @@ nginx-init-container   1/1     Running           0          6m31s
 
 delete resource 
 kubectl delete po nginx-init-container -n default 
+
+
+# Pod multi containers
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: multicontainers-pod
+  name: multicontainers-pod
+spec:
+  containers:
+  - image: httpd
+    name: httpd-pod
+  - image: alpine
+    name: debug
+    command: 
+      - "sleep"
+      - "99999999999"
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get po -A
+NAMESPACE      NAME                               READY   STATUS    RESTARTS       AGE
+default        multicontainers-pod                2/2     Running   0              23s
+
+
+2/2 means has two containers on this pod
+
+only will be on status running if two container works as well, in case failed a second keep creating
+
+
+get log container inside 
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl logs -n default  multicontainers-pod 
+Defaulted container "httpd-pod" out of: httpd-pod, debug
+AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using 10.244.2.8. Set the 'ServerName' directive globally to suppress this message
+AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using 10.244.2.8. Set the 'ServerName' directive globally to suppress this message
+[Wed Mar 25 01:15:10.848450 2026] [mpm_event:notice] [pid 1:tid 1] AH00489: Apache/2.4.66 (Unix) configured -- resuming normal operations
+[Wed Mar 25 01:15:10.848647 2026] [core:notice] [pid 1:tid 1] AH00094: Command line: 'httpd -D FOREGROUND'
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl logs -n default  multicontainers-pod -c debug
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ 
+
+
+access container by kubectl exec
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl exec -it multicontainers-pod -c debug -- sh
+/ # ls
+bin    dev    etc    home   lib    media  mnt    opt    proc   root   run    sbin   srv    sys    tmp    usr    var
+/ # ^C
+
+/ # ^C
+
+/ # exit 
+command terminated with exit code 130
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl exec multicontainers-pod -c debug -- ls
+bin
+dev
+etc
+home
+lib
+media
+mnt
+opt
+proc
+root
+run
+sbin
+srv
+sys
+tmp
+usr
+var
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ 
+
+
+container has access network because was share each other 
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl exec -it multicontainers-pod -c debug -- sh
+/ # netstat -ln
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       
+tcp        0      0 :::80                   :::*                    LISTEN      
+Active UNIX domain sockets (only servers)
+Proto RefCnt Flags       Type       State         I-Node Path
+/ # apk install curl bind-tools
+ERROR: 'install' is not an apk command. See 'apk --help'.
+/ # apk add curl bind-tools
+( 1/24) Installing fstrm (0.6.1-r4)
+( 2/24) Installing krb5-conf (1.0-r2)
+( 3/24) Installing libcom_err (1.47.3-r0)
+( 4/24) Installing keyutils-libs (1.6.3-r4)
+( 5/24) Installing libverto (0.3.2-r2)
+( 6/24) Installing krb5-libs (1.22.1-r0)
+( 7/24) Installing json-c (0.18-r1)
+( 8/24) Installing nghttp2-libs (1.68.0-r0)
+( 9/24) Installing protobuf-c (1.5.2-r2)
+(10/24) Installing userspace-rcu (0.15.3-r0)
+(11/24) Installing libuv (1.51.0-r0)
+(12/24) Installing xz-libs (5.8.2-r0)
+(13/24) Installing libxml2 (2.13.9-r0)
+(14/24) Installing bind-libs (9.20.20-r0)
+(15/24) Installing bind-tools (9.20.20-r0)
+(16/24) Installing brotli-libs (1.2.0-r0)
+(17/24) Installing c-ares (1.34.6-r0)
+(18/24) Installing libunistring (1.4.1-r0)
+(19/24) Installing libidn2 (2.3.8-r0)
+(20/24) Installing nghttp3 (1.13.1-r0)
+(21/24) Installing libpsl (0.21.5-r3)
+(22/24) Installing zstd-libs (1.5.7-r2)
+(23/24) Installing libcurl (8.17.0-r1)
+(24/24) Installing curl (8.17.0-r1)
+Executing busybox-1.37.0-r30.trigger
+OK: 20.2 MiB in 40 packages
+/ # curl localhost
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>It works! Apache httpd</title>
+</head>
+<body>
+<p>It works!</p>
+</body>
+</html>
+/ # 
+/ # 
+/ # curl localhost -i
+HTTP/1.1 200 OK
+Date: Wed, 25 Mar 2026 01:35:05 GMT
+Server: Apache/2.4.66 (Unix)
+Last-Modified: Fri, 07 Nov 2025 08:23:08 GMT
+ETag: "bf-642fce432f300"
+Accept-Ranges: bytes
+Content-Length: 191
+Content-Type: text/html
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>It works! Apache httpd</title>
+</head>
+<body>
+<p>It works!</p>
+</body>
+</html>
+
+
+Kubernetes Multi-Container Pod
+🎯 Objective
+
+Learn how to:
+
+Create a Pod with multiple containers
+
+Understand Pod status (2/2 Running)
+
+View logs per container
+
+Access containers using kubectl exec
+
+Understand shared networking inside a Pod
+
+🧩 1. Create a Multi-Container Pod
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multicontainers-pod
+  labels:
+    run: multicontainers-pod
+spec:
+  containers:
+  - name: httpd-pod
+    image: httpd
+  - name: debug
+    image: alpine
+    command: ["sleep", "99999999999"]
+🧠 Explanation
+
+httpd-pod → main web server
+
+debug → helper container (kept alive for troubleshooting)
+
+👉 Both run inside the same Pod
+
+📊 2. Check Pod Status
+kubectl get pods
+
+Output:
+
+multicontainers-pod   2/2   Running
+✅ What 2/2 means
+
+2 containers defined
+
+2 containers running
+
+👉 Pod is healthy only if ALL containers are running
+
+❗ Important behavior
+
+If one container fails:
+
+Status becomes 1/2
+
+Pod is not fully healthy
+
+Kubernetes restarts the failed container automatically
+
+📜 3. View Logs
+Default behavior
+kubectl logs multicontainers-pod
+
+Output:
+
+Defaulted container "httpd-pod"
+
+👉 Kubernetes selects the first container
+
+Specify container
+kubectl logs multicontainers-pod -c debug
+
+👉 Each container has its own logs
+
+🔐 4. Access Containers (kubectl exec)
+🔥 Correct syntax (important)
+kubectl exec -it POD -c CONTAINER -- COMMAND
+Access debug container
+kubectl exec -it multicontainers-pod -c debug -- sh
+Run command without shell
+kubectl exec multicontainers-pod -c debug -- ls
+🌐 5. Shared Network (VERY IMPORTANT)
+
+All containers in a Pod share:
+
+same IP
+
+same network namespace
+
+same localhost
+
+🧪 Proof
+
+Inside debug container:
+
+netstat -ln
+
+Output shows:
+
+:::80 LISTEN
+
+👉 Port 80 is from the httpd container
+
+Test communication
+apk add curl
+curl localhost
+
+Output:
+
+It works! Apache httpd
+🎯 Key Insight
+
+👉 Even though containers are separate:
+
+They communicate using:
+
+localhost
+🧠 6. Mental Model
+Pod (1 IP)
+ ├── httpd (port 80)
+ └── debug (tools)
+
+Shared:
+✔ network
+✔ localhost
+✔ volumes (if defined)
+⚠️ Common Mistakes
+❌ Missing -- in exec
+
+Wrong:
+
+kubectl exec pod -c debug ls
+
+Correct:
+
+kubectl exec pod -c debug -- ls
+❌ Forgetting container name
+
+Multi-container Pods require:
+
+-c <container-name>
+🚀 7. Real Use Cases
+
+Multi-container Pods are used for:
+
+🔹 Sidecar pattern
+
+logging agent
+
+proxy (nginx)
+
+metrics exporter
+
+🔹 Debugging
+
+temporary container with tools (alpine)
+
+🔹 Helper services
+
+file sync
+
+config loader
