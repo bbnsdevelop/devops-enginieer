@@ -2216,3 +2216,177 @@ temporary container with tools (alpine)
 file sync
 
 config loader
+
+
+
+📘 Kubernetes Pod Concepts – Summary
+1️⃣ Init Containers
+📄 Example YAML
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo
+  labels:
+    run: demo
+spec:
+  initContainers:
+  - name: wait-for-dns
+    image: busybox:1.28
+    command:
+      - sh
+      - -c
+      - |
+        until nslookup order-database; do
+          echo "Trying to resolve order-database"
+          sleep 2
+        done
+
+  containers:
+  - name: demo
+    image: httpd
+🧠 Explanation
+
+initContainers run before the main container
+
+They must complete successfully before the app starts
+
+Used to validate dependencies (e.g., DNS, database, APIs)
+
+🎯 Key Idea
+
+👉 The main container (httpd) will only start after:
+
+order-database is resolvable
+2️⃣ Multi-Container Pods
+📄 Example YAML
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-multi
+  labels:
+    run: demo-multi
+spec:
+  containers:
+  - name: demo
+    image: httpd
+
+  - name: debug
+    image: alpine
+    command:
+      - sh
+      - -c
+      - sleep 99999999
+🧠 Explanation
+
+A Pod can run multiple containers
+
+Containers share:
+
+network (same IP)
+
+localhost
+
+storage (if volumes are defined)
+
+🎯 Use Cases
+
+Debugging container (your example)
+
+Sidecar pattern (logs, proxy, monitoring)
+
+Helper containers
+
+🔥 Key Insight
+
+👉 Containers inside the same Pod can communicate via:
+
+curl localhost
+3️⃣ Pod Lifecycle & Termination
+📄 Example YAML
+apiVersion: v1
+kind: Pod
+metadata:
+  name: worker-pod
+  labels:
+    run: worker-pod
+spec:
+  terminationGracePeriodSeconds: 60
+
+  containers:
+  - name: alpine
+    image: alpine
+    command: ["sleep", "99999999"]
+
+    lifecycle:
+      preStop:
+        exec:
+          command:
+            - sh
+            - -c
+            - curl 10.244.2.32
+🧠 Explanation
+
+This defines how a Pod shuts down gracefully
+
+⚙️ Termination Flow
+
+When the Pod is deleted:
+
+Kubernetes sends SIGTERM to the container
+
+Executes the preStop hook
+
+Waits up to:
+
+terminationGracePeriodSeconds: 60
+
+If still running → sends SIGKILL
+
+🎯 Purpose of preStop
+
+Notify another service
+
+Finish processing requests
+
+Save state / cleanup
+
+💡 Example Behavior
+curl 10.244.2.32
+
+👉 Could be used to:
+
+notify another Pod
+
+deregister from a service
+
+send shutdown signal
+
+🧾 Final Summary
+🔹 Init Containers
+
+Run before app starts
+
+Ensure dependencies are ready
+
+Block startup until success
+
+🔹 Multi-Container Pods
+
+Multiple containers in one Pod
+
+Share network and environment
+
+Used for sidecars and debugging
+
+🔹 Pod Lifecycle
+
+Controlled shutdown process
+
+preStop hook runs before termination
+
+Grace period allows safe exit
+
+🧠 Big Picture
+InitContainer → prepares environment
+Main Containers → run application
+Lifecycle → controls shutdown
