@@ -485,6 +485,47 @@ kube-system    kube-proxy-kbtzl                   1/1     Running   3 (6m50s ago
 kube-system    kube-proxy-x9rv8                   1/1     Running   3 (7m42s ago)   7d
 kube-system    kube-scheduler-master-1            1/1     Running   5 (8m33s ago)   8d
 
+# use -oyaml + neat 
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get deploy httpd-d -oyaml | kubectl neat
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  labels:
+    app: httpd-d
+  name: httpd-d
+  namespace: default
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: httpd-d
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: httpd-d
+    spec:
+      containers:
+      - image: httpd
+        imagePullPolicy: Always
+        name: httpd
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+
+
+# GET easy yaml
 b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get pod -n kube-system etcd-master-1 -oyaml
 apiVersion: v1
 kind: Pod
@@ -742,6 +783,47 @@ setup: https://krew.sigs.k8s.io/docs/user-guide/setup/install/
 
 kubectl krew install neat 
 b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer(main)$ kubectl get po nginx -o yaml | kubectl neat > nginx.yaml
+
+# use neat to clear yaml
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get deploy httpd-d -oyaml | kubectl neat
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  labels:
+    app: httpd-d
+  name: httpd-d
+  namespace: default
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: httpd-d
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: httpd-d
+    spec:
+      containers:
+      - image: httpd
+        imagePullPolicy: Always
+        name: httpd
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+
 
 # Namespace
 
@@ -2390,3 +2472,34 @@ Grace period allows safe exit
 InitContainer → prepares environment
 Main Containers → run application
 Lifecycle → controls shutdown
+
+
+# Deployments
+By command line 
+
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl create deployment --image httpd httpd-d
+deployment.apps/httpd-d created
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get deploy
+NAME      READY   UP-TO-DATE   AVAILABLE   AGE
+httpd-d   0/1     1            0           4s
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get deploy
+NAME      READY   UP-TO-DATE   AVAILABLE   AGE
+httpd-d   1/1     1            1           34s
+
+
+
+By yaml
+
+      terminationGracePeriodSeconds: 30
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl apply -f ./../yamls/deploy/nginx-deployment.yaml 
+deployment.apps/nginx created
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get deploy 
+NAME      READY   UP-TO-DATE   AVAILABLE   AGE
+httpd-d   1/1     1            1           13m
+nginx     0/1     1            0           9s
+b2@b2-Nitro-AN515-51:/media/b2/file_storage/_trabalho/projetos/devops-enginieer/vagrant-tools(main)$ kubectl get deploy 
+NAME      READY   UP-TO-DATE   AVAILABLE   AGE
+httpd-d   1/1     1            1           13m
+nginx     1/1     1            1           13s
+
+
